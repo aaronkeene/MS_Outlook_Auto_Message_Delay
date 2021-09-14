@@ -1,15 +1,108 @@
-Dim obj As Object
-Dim Mail As Outlook.MailItem
-Dim WkDay As Integer
-Dim MinNow As Integer
-Dim SendHour As Integer
-Dim SendDate As Date
-Dim SendNow As String
-Dim UserDeferOption As Integer
 
-Function getActiveMessage() As Outlook.MailItem
-    Dim insp As Outlook.Inspector
-    Dim inline As Object
+Private Sub Application_ItemSend(ByVal Item As Object, Cancel As Boolean)
+
+    ' Delays messages to next working day as work start time
+    
+    Dim msg                         As Object
+    Dim mailItem                    As Outlook.mailItem
+    Dim msgSendDate                 As Date
+    Dim msgDeferredDeliveryTime     As Date
+    
+    Const c_WorkHourStart   As Long = 7
+    Const c_WorkHourEnd     As Long = 19
+      
+    Set mailItem = getActiveMessage()
+    
+    If obj Is Nothing Then
+        'Do nothing - as this is likely a calendar issue
+        Exit Sub
+    End If
+    
+    ' bypass for high importance items
+    If mailItem.Importance = olImportanceHigh Then
+        Exit Sub
+    End If
+      
+    msgSendDate = Now()
+    
+    msgDeferredDeliveryTime = DeferredDeliveryTime(msgSendDate, c_WorkHourStart, c_WorkHourEnd)
+                  
+    If msgDelaySendDate > msgSendDate Then
+        mailItem.DeferredDeliveryTime = msgDeferredDeliveryTime
+    End If
+        
+End Sub
+
+
+
+
+Private Function DeferredDeliveryTime(MessageSendDate As Date, WorkHourStart As Long, WorkHourEnd As Long) As Date
+    
+    ' Determines the deferred delivery time based on the start and end work hours
+    ' Note Sunday = 1
+    
+    Dim msgDay As Long
+    Dim msgHour As Long
+    Dim msgMinute As Long
+    Dim sendDate As Date
+    
+    msgDay = Weekday(MessageSendDate, vbSunday)
+    msgHour = Hour(MessageSendDate)
+    msgMinute = Minute(MessageSendDate)
+  
+    ' Check if Sunday
+    If msgDay = 1 Then
+        sendDate = DateAdd("d", 1, MessageSendDate)
+        sendDate = DateAdd("h", WorkHourStart - msgHour, sendDate)
+        sendDate = DateAdd("n", -msgMinute, sendDate)
+        sendDate = DateAdd("s", -Second(sendDate), sendDate)
+        Exit Function
+    End If
+    
+    'Check if Saturday
+    If msgDay = 7 Then
+        sendDate = DateAdd("d", 2, MessageSendDate)
+        sendDate = DateAdd("h", WorkHourStart - msgHour, sendDate)
+        sendDate = DateAdd("n", -msgMinute, sendDate)
+        sendDate = DateAdd("s", -Second(sendDate), sendDate)
+        Exit Function
+    End If
+    
+    'Check if Friday after work hours
+    If msgDay = 6 And msgHour >= WorkHourEnd Then
+        sendDate = DateAdd("d", 3, MessageSendDate)
+        sendDate = DateAdd("h", WorkHourStart - msgHour, sendDate)
+        sendDate = DateAdd("n", -msgMinute, sendDate)
+        sendDate = DateAdd("s", -Second(sendDate), sendDate)
+        Exit Function
+    End If
+    
+    ' Check if before work hours
+    If msgHour < WorkHourStart Then
+        sendDate = DateAdd("h", WorkHourStart - msgHour, msgDate)
+        sendDate = DateAdd("n", -msgMinute, sendDate)
+        Exit Function
+    End If
+
+    ' Check if after work hours
+    If msgHour >= WorkHourEnd Then
+        sendDate = DateAdd("h", (24 + WorkHourStart) - msgHour, MessageSendDate)
+        sendDate = DateAdd("n", -msgMinute, sendDate)
+        sendDate = DateAdd("s", -Second(sendDate), sendDate)
+        Exit Function
+    End If
+
+    ' No Delay
+    MessageDelay = MessageSendDate
+    
+End Function
+
+
+
+Private Function getActiveMessage() As Outlook.mailItem
+    
+    Dim insp                    As Outlook.Inspector
+    Dim inline                  As Object
     
     If TypeOf Application.ActiveWindow Is Outlook.Inspector Then
         Set insp = Application.ActiveWindow
@@ -38,91 +131,6 @@ Function getActiveMessage() As Outlook.MailItem
        
        End If
 
-End If
+    End If
+    
 End Function
-
-Private Sub Application_ItemSend(ByVal Item As Object, Cancel As Boolean)
-    'On Error GoTo ErrorHandler
-    'This sub used to delay the sending of an email from send time to the next work day at 8am.
-    'Set Variables
-    
-    SendDate = Now()
-    SendHour = Hour(Now)
-    MinNow = Minute(Now)
-    WkDay = Weekday(Now)
-    SendNow = "Y"
-
-    'Check if Before 7am
-    If SendHour < 7 Then
-        MsgBox ("Before seven")
-        SendHour = 8 - SendHour
-        SendDate = DateAdd("h", SendHour, SendDate)
-        SendDate = DateAdd("n", -MinNow, SendDate)
-        SendNow = "N"
-    End If
-
-    'Check if after 7PM other than Friday
-    If SendHour >= 19 Then 'After 7 PM
-        SendHour = 32 - SendHour 'Send a 8 am next day
-        SendDate = DateAdd("h", SendHour, SendDate)
-        SendDate = DateAdd("n", -MinNow, SendDate)
-        SendNow = "N"
-    End If
-    
-    'Check if Sunday
-    If WkDay = 1 Then
-        SendDate = Now()
-        SendHour = Hour(Now)
-        SendDate = DateAdd("d", 1, SendDate)
-        SendDate = DateAdd("h", 8 - SendHour, SendDate)
-        SendDate = DateAdd("n", -MinNow, SendDate)
-        SendNow = "N"
-    End If
-    
-    'Check if Saturday
-    If WkDay = 7 Then
-        SendDate = Now()
-        SendHour = Hour(Now)
-        SendDate = DateAdd("d", 2, SendDate)
-        SendDate = DateAdd("h", 8 - SendHour, SendDate)
-        SendDate = DateAdd("n", -MinNow, SendDate)
-        SendNow = "N"
-    End If
-    
-    'Check if Friday after 7pm
-    If WkDay = 6 And SendHour >= 19 Then 'After 7pm Friday
-        SendDate = Now()
-        SendHour = Hour(Now)
-        SendDate = DateAdd("d", 3, SendDate)
-        SendDate = DateAdd("h", 8 - SendHour, SendDate)
-        SendDate = DateAdd("n", -MinNow, SendDate)
-        SendNow = "N"
-    End If
-
-    'Send the Email
-    Set obj = getActiveMessage()
-    
-    If obj Is Nothing Then
-        'Do nothing - as this is likely a calendar issue
-        'MsgBox "No active inspector"
-    Else
-
-        If TypeOf obj Is Outlook.MailItem Then
-            Set Mail = obj
-            'Check if we need to delay delivery
-            If SendNow = "N" Then
-                UserDeferOption = MsgBox("Do you want to postpone sending until work hours (" & SendDate & ")?", vbYesNo + vbQuestion, "Time to stop working!")
-                If UserDeferOption = vbYes Then
-                    Mail.DeferredDeliveryTime = SendDate
-                    'MsgBox ("Your mail will be sent at: " & SendDate)
-                End If
-            End If
-        End If
-    End If
-    
-    Exit Sub
-
-'ErrorHandler:
-' MsgBox "Error!"
-
-End Sub
