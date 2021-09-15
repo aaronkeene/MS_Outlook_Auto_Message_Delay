@@ -1,25 +1,24 @@
+Option Explicit
 
 Private Sub Application_ItemSend(ByVal Item As Object, Cancel As Boolean)
 
     ' Delays messages to next working day as work start time
     
-    Dim msg                         As Object
-    Dim mailItem                    As Outlook.mailItem
+    Dim msg                         As Outlook.mailItem
     Dim msgSendDate                 As Date
     Dim msgDeferredDeliveryTime     As Date
     
     Const c_WorkHourStart   As Long = 7
     Const c_WorkHourEnd     As Long = 19
       
-    Set mailItem = getActiveMessage()
+    Set msg = getActiveMessage()
     
-    If obj Is Nothing Then
-        'Do nothing - as this is likely a calendar issue
+    If msg Is Nothing Then
         Exit Sub
     End If
     
-    ' bypass for high importance items
-    If mailItem.Importance = olImportanceHigh Then
+    ' Bypass for high importance items
+    If msg.Importance = olImportanceHigh Then
         Exit Sub
     End If
       
@@ -27,8 +26,8 @@ Private Sub Application_ItemSend(ByVal Item As Object, Cancel As Boolean)
     
     msgDeferredDeliveryTime = DeferredDeliveryTime(msgSendDate, c_WorkHourStart, c_WorkHourEnd)
                   
-    If msgDelaySendDate > msgSendDate Then
-        mailItem.DeferredDeliveryTime = msgDeferredDeliveryTime
+    If msgDeferredDeliveryTime > msgSendDate Then
+        msg.DeferredDeliveryTime = msgDeferredDeliveryTime
     End If
         
 End Sub
@@ -56,6 +55,7 @@ Private Function DeferredDeliveryTime(MessageSendDate As Date, WorkHourStart As 
         sendDate = DateAdd("h", WorkHourStart - msgHour, sendDate)
         sendDate = DateAdd("n", -msgMinute, sendDate)
         sendDate = DateAdd("s", -Second(sendDate), sendDate)
+        DeferredDeliveryTime = sendDate
         Exit Function
     End If
     
@@ -65,6 +65,7 @@ Private Function DeferredDeliveryTime(MessageSendDate As Date, WorkHourStart As 
         sendDate = DateAdd("h", WorkHourStart - msgHour, sendDate)
         sendDate = DateAdd("n", -msgMinute, sendDate)
         sendDate = DateAdd("s", -Second(sendDate), sendDate)
+        DeferredDeliveryTime = sendDate
         Exit Function
     End If
     
@@ -74,13 +75,15 @@ Private Function DeferredDeliveryTime(MessageSendDate As Date, WorkHourStart As 
         sendDate = DateAdd("h", WorkHourStart - msgHour, sendDate)
         sendDate = DateAdd("n", -msgMinute, sendDate)
         sendDate = DateAdd("s", -Second(sendDate), sendDate)
+        DeferredDeliveryTime = sendDate
         Exit Function
     End If
     
     ' Check if before work hours
     If msgHour < WorkHourStart Then
-        sendDate = DateAdd("h", WorkHourStart - msgHour, msgDate)
+        sendDate = DateAdd("h", WorkHourStart - msgHour, MessageSendDate)
         sendDate = DateAdd("n", -msgMinute, sendDate)
+        DeferredDeliveryTime = sendDate
         Exit Function
     End If
 
@@ -89,11 +92,12 @@ Private Function DeferredDeliveryTime(MessageSendDate As Date, WorkHourStart As 
         sendDate = DateAdd("h", (24 + WorkHourStart) - msgHour, MessageSendDate)
         sendDate = DateAdd("n", -msgMinute, sendDate)
         sendDate = DateAdd("s", -Second(sendDate), sendDate)
+        DeferredDeliveryTime = sendDate
         Exit Function
     End If
 
     ' No Delay
-    MessageDelay = MessageSendDate
+    DeferredDeliveryTime = MessageSendDate
     
 End Function
 
