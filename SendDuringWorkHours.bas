@@ -8,8 +8,9 @@ Private Sub Application_ItemSend(ByVal Item As Object, Cancel As Boolean)
     Dim msgSendDate                 As Date
     Dim msgDeferredDeliveryTime     As Date
     
-    Const c_WorkHourStart   As Long = 7
-    Const c_WorkHourEnd     As Long = 19
+    Const c_WorkHourStart               As Long = 7
+    Const c_WorkHourEnd                 As Long = 19
+    Const c_BypassForHighImportance     As Boolean = True
       
     Set msg = getActiveMessage()
     
@@ -17,9 +18,9 @@ Private Sub Application_ItemSend(ByVal Item As Object, Cancel As Boolean)
         Exit Sub
     End If
     
-    ' Bypass for high importance items
-    If msg.Importance = olImportanceHigh Then
-        Exit Sub
+    ' Check if bypass for high importance items
+    If c_BypassForHighImportance 
+        If msg.Importance = olImportanceHigh Then: Exit Sub
     End If
       
     msgSendDate = Now()
