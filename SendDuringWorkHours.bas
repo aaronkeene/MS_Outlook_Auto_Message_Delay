@@ -28,7 +28,13 @@ Private Sub Application_ItemSend(ByVal Item As Object, Cancel As Boolean)
     msgDeferredDeliveryTime = DeferredDeliveryTime(msgSendDate, c_WorkHourStart, c_WorkHourEnd)
                   
     If msgDeferredDeliveryTime > msgSendDate Then
+        
+        If MsgBox("Do you wnat to delay delivery until " & msgDeferredDeliveryTime & "?", vbYesNo, "Delay Delivery?") <> vbYes Then
+            Exit Sub
+        End If
+                        
         msg.DeferredDeliveryTime = msgDeferredDeliveryTime
+    
     End If
         
 End Sub
