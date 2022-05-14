@@ -1,46 +1,59 @@
 Option Explicit
+Const c_WorkHourStart           As Long = 7
+Const c_WorkHourEnd             As Long = 19
+
 
 Private Sub Application_ItemSend(ByVal Item As Object, Cancel As Boolean)
-
-    ' Delays messages to next working day as work start time
+    
+    'This function runs on every mail item sent
     
     Dim msg                         As Outlook.mailItem
-    Dim msgSendDate                 As Date
-    Dim msgDeferredDeliveryTime     As Date
-    
-    Const c_WorkHourStart               As Long = 7
-    Const c_WorkHourEnd                 As Long = 19
-    Const c_BypassForHighImportance     As Boolean = True
-      
+
     Set msg = getActiveMessage()
+    
+    Call DelayMessageToNextWorkDay(msg, c_WorkHourStart, c_WorkHourEnd)        
+        
+End Sub
+    
+    
+Private Sub DelayMessageToNextWorkDay(msg As Outlook.mailItem, _
+                                      WorkHourStart As Long, _
+                                      WorkHourEnd As Long, _
+                                      Optional BypassForHighImportance As Boolean = True, _
+                                      Optional UserConfirmDelay As Boolean = False)
+    
+    'Delay mail unit start of next workday (Monday)
+        
+    Dim msgSendDateTime             As Date
+    Dim msgDeferredDateTime         As Date
     
     If msg Is Nothing Then
         Exit Sub
     End If
     
-    ' Check if bypass for high importance items
-    If c_BypassForHighImportance 
-        If msg.Importance = olImportanceHigh Then: Exit Sub
+    If BypassForHighImportance And msg.Importance = olImportanceHigh Then
+        Exit Sub
     End If
-      
-    msgSendDate = Now()
     
-    msgDeferredDeliveryTime = DeferredDeliveryTime(msgSendDate, c_WorkHourStart, c_WorkHourEnd)
-                  
-    If msgDeferredDeliveryTime > msgSendDate Then
-        
-        If MsgBox("Do you wnat to delay delivery until " & msgDeferredDeliveryTime & "?", vbYesNo, "Delay Delivery?") <> vbYes Then
-            Exit Sub
-        End If
-                        
-        msg.DeferredDeliveryTime = msgDeferredDeliveryTime
+    msgSendDateTime = Now()
     
+    msgDeferredDateTime = DeferredDeliveryTime(msgSendDateTime, WorkHourStart, WorkHourEnd)
+    
+    If msgDeferredDateTime < msgSendDateTime Then
+        Exit Sub
     End If
-        
+    
+    If Not UserConfirmDelay Then
+        msg.DeferredDeliveryTime = msgDeferredDateTime
+        Exit Sub
+    End If
+    
+    If MsgBox("Do you want to delay delivery until " & msgDeferredDateTime & "?", vbYesNo, "Delay Delivery?") = vbYes Then
+        msg.DeferredDeliveryTime = msgDeferredDateTime
+        Exit Sub
+    End If
 End Sub
-
-
-
+                        
 
 Private Function DeferredDeliveryTime(MessageSendDate As Date, WorkHourStart As Long, WorkHourEnd As Long) As Date
     
