@@ -125,36 +125,18 @@ End Function
 
 Private Function getActiveMessage() As Outlook.mailItem
     
-    Dim insp                    As Outlook.Inspector
-    Dim inline                  As Object
-    
-    If TypeOf Application.ActiveWindow Is Outlook.Inspector Then
-        Set insp = Application.ActiveWindow
+    If Application.ActiveInspector.CurrentItem.Class = olMail Then
+   
+        Set getActiveMessage = Application.ActiveInspector.CurrentItem
+        Exit Function
+        
     End If
-
-    If insp Is Nothing Then
-        
-        Set inline = Application.ActiveExplorer.ActiveInlineResponse
-        
-        If inline Is Nothing Then
-            Exit Function
-        End If
-        
-        Set getActiveMessage = inline
     
-    Else
-       
-       Set insp = Application.ActiveInspector
-       
-       If insp.CurrentItem.Class = olMail Then
-          Set getActiveMessage = insp.CurrentItem
-       
-       Else
-         
-         Exit Function
-       
-       End If
-
+    If Not Application.ActiveExplorer.ActiveInlineResponse Is Nothing Then
+        
+        Set getActiveMessage = Application.ActiveExplorer.ActiveInlineResponse
+        Exit Function
+        
     End If
     
 End Function
