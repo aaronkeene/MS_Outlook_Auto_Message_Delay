@@ -125,11 +125,11 @@ End Function
 
 Private Function getActiveMessage() As Outlook.mailItem
     
-    If Application.ActiveWindow Is Outlook.Inspectors Then
+    If Application.ActiveInspector.CurrentItem.Class = olMail Then
         
-        If Application.ActiveWindow.CurrentItem.Class = olMail Then: Set getActiveMessage = Application.ActiveInspector.CurrentItem
+        Set getActiveMessage = Application.ActiveInspector.CurrentItem
         Exit Function
-        
+    
     End If
     
     If Not Application.ActiveExplorer.ActiveInlineResponse Is Nothing Then
