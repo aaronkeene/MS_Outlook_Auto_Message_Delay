@@ -1,4 +1,4 @@
-# Outlook-SendDuringWorkHours
+Microsoft Outlook, send messages only during work hours.
 
 Use this macro to delay messages to the next working day.  I used this daily to ensure meesages sent after hours in Outlook automatically set the delayed send time.  
 
