@@ -3,6 +3,7 @@ Const c_WorkHourStart           As Long = 7
 Const c_WorkHourEnd             As Long = 19
 
 
+
 Private Sub Application_ItemSend(ByVal Item As Object, Cancel As Boolean)
     
     'This function runs on every mail item sent
@@ -11,11 +12,16 @@ Private Sub Application_ItemSend(ByVal Item As Object, Cancel As Boolean)
 
     Set msg = getActiveMessage()
     
+    If msg Is Nothing Then
+        Exit Sub
+    End If
+    
     Call DelayMessageToNextWorkDay(msg, c_WorkHourStart, c_WorkHourEnd)        
         
 End Sub
     
-    
+
+
 Private Sub DelayMessageToNextWorkDay(msg As Outlook.mailItem, _
                                       WorkHourStart As Long, _
                                       WorkHourEnd As Long, _
@@ -54,6 +60,7 @@ Private Sub DelayMessageToNextWorkDay(msg As Outlook.mailItem, _
     End If
 End Sub
                         
+                            
 
 Private Function DeferredDeliveryTime(MessageSendDate As Date, WorkHourStart As Long, WorkHourEnd As Long) As Date
     
@@ -123,14 +130,7 @@ End Function
 
 
 
-Private Function getActiveMessage() As Outlook.mailItem
-    
-    If Application.ActiveInspector.CurrentItem.Class = olMail Then
-        
-        Set getActiveMessage = Application.ActiveInspector.CurrentItem
-        Exit Function
-    
-    End If
+Private Function getActiveMessage() As Outlook.MailItem
     
     If Not Application.ActiveExplorer.ActiveInlineResponse Is Nothing Then
         
@@ -139,4 +139,18 @@ Private Function getActiveMessage() As Outlook.mailItem
         
     End If
     
+    If Application.ActiveInspector Is Nothing Then
+        Exit Function
+    End If
+    
+    If Not Application.ActiveInspector.CurrentItem Is Nothing Then
+    
+        If Application.ActiveInspector.CurrentItem.Class = olMail Then
+            Set getActiveMessage = Application.ActiveInspector.CurrentItem
+            Exit Function
+        End If
+        
+    End If
+    
 End Function
+
