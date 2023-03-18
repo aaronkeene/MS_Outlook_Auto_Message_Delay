@@ -1,6 +1,6 @@
 Option Explicit
-Const c_WorkHourStart           As Long = 7
-Const c_WorkHourEnd             As Long = 19
+Const START_OF_DAY           As Long = 7
+Const END_OF_DAY             As Long = 19
 
 
 
@@ -16,7 +16,7 @@ Private Sub Application_ItemSend(ByVal Item As Object, Cancel As Boolean)
         Exit Sub
     End If
     
-    Call DelayMessageToNextWorkDay(msg, c_WorkHourStart, c_WorkHourEnd)        
+    Call DelayMessageToNextWorkDay(msg, START_OF_DAY, END_OF_DAY)        
         
 End Sub
     
